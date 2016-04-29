@@ -86,6 +86,13 @@ function handle_item($item) {
     update_post_meta($id, 'inventory', $qte - $item['quantity']);
 }
 
+add_action( 'admin_enqueue_scripts', 'snipcart_enqueue_admin_script' );
+function snipcart_enqueue_admin_script( $hook ) {
+    wp_register_style('snipcart_admin_style',
+                        get_stylesheet_directory_uri() . '/css/admin.css', false, '1.0.0');
+    wp_enqueue_style('snipcart_admin_style');
+}
+
 add_action( 'admin_menu', 'register_custom_menu_page' );
 function register_custom_menu_page() {
     add_menu_page('snipcart', 'Snipcart', 'manage_options', 'snipcart', 'snipcart_dashboard', '', 6);
