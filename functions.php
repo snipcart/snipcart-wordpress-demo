@@ -85,3 +85,60 @@ function handle_item($item) {
     $qte = get_post_meta($id, 'inventory')[0];
     update_post_meta($id, 'inventory', $qte - $item['quantity']);
 }
+
+add_action( 'admin_menu', 'register_custom_menu_page' );
+function register_custom_menu_page() {
+    add_menu_page('snipcart', 'Snipcart', 'manage_options', 'snipcart', 'snipcart_dashboard', '', 6);
+}
+
+function snipcart_dashboard() {
+    $resp = call_snipcart_api('/orders');
+    $statuses = array("Processed", "Disputed", "Shipped", "Delivered", "Pending", "Cancelled");
+
+    echo "<table class='snip-table'>";
+
+    echo "<tr>
+            <th>Invoice number</th>
+            <th>Payment method</th>
+            <th>Email</th>
+            <th>Total</th>
+            <th>Date</th>
+            <th>Order status</th>
+            <th>Update status</th>
+            <th>Items</th>
+          </tr>";
+
+    foreach ($resp->items as $order) {
+        echo "<tr>";
+        echo "<td>";
+        echo "<a target='_blank' href='https://app.snipcart.com/dashboard/orders/$order->token'>";
+        echo $order->invoiceNumber. "</a></td>";
+        echo "<td>" . $order->paymentMethod. "</td>";
+        echo "<td>" . $order->email . "</td>";
+        echo "<td>" . $order->finalGrandTotal. "$</td>";
+        $date = new DateTime($order->creationDate);
+        $outputDate = date_format($date, 'Y-m-d H:i');
+        echo "<td>" . $outputDate. "</td>";
+        echo "<td>" . $order->status. "</td>";
+        echo "<td><select class='order-status-select' data-token='$order->token'>";
+
+        foreach ($statuses as $status) {
+            echo "<option value='$status' ";
+            if ($status == $order->status) echo "selected='selected'";
+            echo ">$status</option>";
+        }
+
+        echo "</select>";
+
+        echo "<td>";
+        foreach ($order->items as $item) {
+            echo $item->name . "<br/>";
+        }
+
+        echo "</tr>";
+    }
+
+    echo "</table>";
+
+    echo "<script src='". get_stylesheet_directory_uri() . '/js/admin.js' . "' />";
+}
