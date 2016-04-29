@@ -91,6 +91,13 @@ function snipcart_enqueue_admin_script( $hook ) {
     wp_register_style('snipcart_admin_style',
                         get_stylesheet_directory_uri() . '/css/admin.css', false, '1.0.0');
     wp_enqueue_style('snipcart_admin_style');
+    if ( 'edit.php' === $hook && isset( $_GET['post_type'] ) && 'product' === $_GET['post_type'] ) {
+
+        wp_enqueue_script( 'snipcart_quick_edit',
+                            get_stylesheet_directory_uri() . '/js/quickedit.js',
+                            false, null, true );
+
+    }
 }
 
 add_action( 'admin_menu', 'register_custom_menu_page' );
@@ -169,4 +176,42 @@ function snipcart_update_status() {
     }
 
     wp_die();
+}
+
+add_filter( 'manage_product_posts_columns', 'manage_product_posts_columns' );
+function manage_product_posts_columns( $columns ) {
+    $columns['inventory'] = esc_html__( 'Inventory');
+
+return $columns;
+}
+
+add_action( 'manage_posts_custom_column' , 'display_product_inventory', 10, 2 );
+function display_product_inventory( $column, $post_id ) {
+    if ($column == 'inventory'){
+        echo '<span>', get_post_meta($post_id, 'inventory')[0], '</span>';
+    }
+}
+
+add_filter( 'quick_edit_custom_box', 'snipcart_quick_edit_box');
+function snipcart_quick_edit_box($column_name) {
+    if ($column_name !== 'inventory') return;
+
+    ?>
+    <fieldset class="inline-edit-col-right inline-edit-book">
+                  <div class="inline-edit-col column-<?php echo $column_name; ?>">
+                  <label class="inline-edit-group">
+                  <span class="title">Inventory</span><input name="inventory" />
+                  </label>
+                  </div>
+    </fieldset>
+    <?php
+}
+
+add_action('save_post', 'save_inventory');
+function save_inventory($id) {
+    if ("product" !== $_POST['post_type']) return;
+
+    if (isset($_POST['inventory'])) {
+        update_post_meta($id, 'inventory', $_POST['inventory']);
+    }
 }
