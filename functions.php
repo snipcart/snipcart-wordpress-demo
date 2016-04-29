@@ -149,3 +149,24 @@ function snipcart_dashboard() {
 
     echo "<script src='". get_stylesheet_directory_uri() . '/js/admin.js' . "' />";
 }
+
+add_action('wp_ajax_snipcart_update_status', 'snipcart_update_status');
+function snipcart_update_status() {
+    if (!isset($_POST['token']) || !isset($_POST['value'])) {
+        header('HTTP/1.1 400 Bad Request');
+        echo "Bad request";
+        wp_die();
+    }
+
+    $url = "/orders/" . $_POST['token'];
+    $result = call_snipcart_api($url, "PUT", json_encode(array(
+        "status" => $_POST['value']
+    )));
+
+    if ($result->status !== $_POST['value']) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo "Error while communicating with Snipcart";
+    }
+
+    wp_die();
+}
